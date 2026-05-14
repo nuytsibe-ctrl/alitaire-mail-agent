@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alitaire Mail Agent</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    :root {
+      --navy:   #0D1B2A;
+      --navy2:  #1A3050;
+      --gold:   #C9A94B;
+      --gold2:  #E8C96A;
+      --wit:    #FFFFFF;
+      --licht:  #F5F7FA;
+      --rand:   #DDE2EA;
+      --tekst:  #1A2535;
+      --subtekst: #6B7A8D;
+      --groen:  #2E7D52;
+      --rood:   #C0392B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      background: var(--licht);
+      color: var(--tekst);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    .header {
+      background: var(--navy);
+      color: var(--wit);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      width: 28px;
+      height: 28px;
+      background: var(--gold);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--navy);
+      letter-spacing: -1px;
+    }
+    .header h1 {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .header-status {
+      font-size: 10px;
+      color: var(--gold2);
+      cursor: pointer;
+    }
+
+    /* ── Scroll-inhoud ───────────────────────────────────────────────── */
+    .inhoud {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ── Mail-info kaart ─────────────────────────────────────────────── */
+    .kaart {
+      background: var(--wit);
+      border: 1px solid var(--rand);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .kaart-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--subtekst);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .mail-onderwerp {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--tekst);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .mail-afzender {
+      font-size: 12px;
+      color: var(--subtekst);
+      margin-top: 2px;
+    }
+
+    /* ── Server-status ───────────────────────────────────────────────── */
+    .server-fout {
+      background: #FFF3CD;
+      border: 1px solid #FCEAB3;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #7D5C00;
+      display: none;
+    }
+    .server-fout strong { display: block; margin-bottom: 4px; }
+    .server-fout code {
+      background: rgba(0,0,0,.08);
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 11px;
+    }
+
+    /* ── Genereer-knop ───────────────────────────────────────────────── */
+    .btn-genereer {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background .15s;
+    }
+    .btn-genereer:hover:not(:disabled) { background: var(--gold2); }
+    .btn-genereer:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    /* ── Spinner ────────────────────────────────────────────────────── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--navy);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Resultaat-blok ─────────────────────────────────────────────── */
+    .resultaat-blok { display: none; }
+
+    .werf-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--navy);
+      color: var(--gold2);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .nieuw-badge {
+      background: var(--gold);
+      color: var(--navy);
+      font-size: 9px;
+      padding: 1px 5px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .antwoord-area {
+      width: 100%;
+      min-height: 160px;
+      border: 1px solid var(--rand);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 12px;
+      color: var(--tekst);
+      resize: vertical;
+      outline: none;
+      line-height: 1.5;
+    }
+    .antwoord-area:focus { border-color: var(--gold); }
+
+    /* ── Actieknoppen ────────────────────────────────────────────────── */
+    .actie-rij {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .btn-actie {
+      border: none;
+      border-radius: 7px;
+      padding: 9px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity .15s;
+    }
+    .btn-actie:hover { opacity: .85; }
+    .btn-invoegen {
+      background: var(--navy);
+      color: var(--wit);
+      grid-column: 1 / -1;
+    }
+    .btn-kopieer  { background: var(--licht); color: var(--tekst); border: 1px solid var(--rand); }
+    .btn-opnieuw  { background: var(--licht); color: var(--tekst); border: 1px solid var(--rand); }
+
+    /* ── Fout-blok ───────────────────────────────────────────────────── */
+    .fout-blok {
+      background: #FDECEA;
+      border: 1px solid #F5C6C2;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--rood);
+      display: none;
+    }
+    .fout-blok strong { display: block; margin-bottom: 3px; }
+
+    /* ── Instellingen ────────────────────────────────────────────────── */
+    .instellingen-blok { display: none; }
+    .instellingen-blok label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--subtekst);
+      margin-bottom: 3px;
+      margin-top: 8px;
+    }
+    .instellingen-blok input {
+      width: 100%;
+      border: 1px solid var(--rand);
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 12px;
+      outline: none;
+    }
+    .instellingen-blok input:focus { border-color: var(--gold); }
+    .btn-opslaan {
+      width: 100%;
+      margin-top: 10px;
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      border-radius: 7px;
+      padding: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .melding-ok {
+      color: var(--groen);
+      font-size: 11px;
+      text-align: center;
+      margin-top: 4px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────────────── -->
+  <div class="header">
+    <div class="header-logo">A</div>
+    <h1>Alitaire Mail Agent</h1>
+    <span class="header-status" id="statusToggle" title="Instellingen" onclick="toggleInstellingen()">⚙</span>
+  </div>
+
+  <!-- ── Scroll-inhoud ────────────────────────────────────────────────── -->
+  <div class="inhoud">
+
+    <!-- Server-fout -->
+    <div class="server-fout" id="serverFout">
+      <strong>Lokale server niet actief</strong>
+      Start <code>start.bat</code> in de map <code>Outlook_Addin</code>
+      en vernieuw dan dit paneel.
+    </div>
+
+    <!-- Mail-info -->
+    <div class="kaart" id="mailInfo" style="display:none">
+      <div class="kaart-label">Geselecteerde e-mail</div>
+      <div class="mail-onderwerp" id="mailOnderwerp">—</div>
+      <div class="mail-afzender" id="mailAfzender">—</div>
+    </div>
+
+    <!-- Genereer-knop -->
+    <button class="btn-genereer" id="btnGenereer" onclick="genereerReactie()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnTekst">Reactie genereren</span>
+    </button>
+
+    <!-- Fout-blok -->
+    <div class="fout-blok" id="foutBlok">
+      <strong>Fout bij genereren</strong>
+      <span id="foutTekst"></span>
+    </div>
+
+    <!-- Resultaat -->
+    <div class="resultaat-blok" id="resultaatBlok">
+      <div id="werfBadge" class="werf-badge"></div>
+      <div id="opslaanPad" style="font-size:11px;color:var(--subtekst);margin-bottom:6px;display:none;word-break:break-all;">📄 <span id="opslaanPadTekst"></span></div>
+      <div class="kaart-label">Gegenereerd antwoord</div>
+      <textarea class="antwoord-area" id="antwoordArea" spellcheck="true"></textarea>
+      <div class="actie-rij" style="margin-top:8px">
+        <button class="btn-actie btn-invoegen" onclick="voegIn()">
+          ✉ Invoegen als antwoord
+        </button>
+        <button class="btn-actie btn-kopieer" onclick="kopieer()">
+          ⎘ Kopiëren
+        </button>
+        <button class="btn-actie btn-opnieuw" onclick="opnieuw()">
+          ↺ Opnieuw genereren
+        </button>
+      </div>
+    </div>
+
+    <!-- Instellingen -->
+    <div class="kaart instellingen-blok" id="instellingenBlok">
+      <div class="kaart-label">Instellingen</div>
+      <label>Anthropic API-sleutel</label>
+      <input type="password" id="apiSleutel" placeholder="sk-ant-..."/>
+      <label>Werfmap (volledig pad)</label>
+      <input type="text" id="rootMap" placeholder="C:\Werven"/>
+      <label>Stijlmap (optioneel)</label>
+      <input type="text" id="stijlMap" placeholder="C:\Werven\stijl"/>
+      <button class="btn-opslaan" onclick="slaInstellingenOp()">Opslaan</button>
+      <div class="melding-ok" id="meldingOk">✓ Opgeslagen</div>
+    </div>
+
+  </div>
+
+  <script src="taskpane.js"></script>
+</body>
+</html>
