@@ -4,7 +4,7 @@
 
 const SERVER = 'https://127.0.0.1:5757';
 
-let huidigeMail = null;   // { onderwerp, afzender, afzender_email, tekst }
+let huidigeMail = null;
 let instellingenZichtbaar = false;
 
 // ── Initialisatie ─────────────────────────────────────────────────────────────
@@ -39,13 +39,11 @@ function laadMailInfo() {
   var afzender  = '';
   var email     = '';
 
-  // from is een EmailAddressDetails-object in read mode
   if (item.from) {
     afzender = item.from.displayName  || '';
     email    = item.from.emailAddress || '';
   }
 
-  // body ophalen (Mailbox 1.3+)
   item.body.getAsync(Office.CoercionType.Text, function(result) {
     var tekst = (result.status === Office.AsyncResultStatus.Succeeded)
       ? result.value
@@ -73,7 +71,6 @@ function genereerReactie() {
     return;
   }
 
-  // UI: laad-status
   zet('btnGenereer', 'disabled', true);
   toonEl('spinner', true);
   document.getElementById('btnTekst').textContent = 'Bezig met genereren...';
@@ -96,7 +93,7 @@ function genereerReactie() {
     .catch(function(err) {
       var bericht = err.message || String(err);
       if (bericht.includes('Failed to fetch') || bericht.includes('NetworkError')) {
-        bericht = 'Server niet bereikbaar. Is start.bat actief?';
+        bericht = 'Lokale server niet bereikbaar. Start start.bat op de laptop.';
         toonEl('serverFout', true);
       }
       toonFout(bericht);
@@ -116,12 +113,10 @@ function toonResultaat(data) {
   var antwoord = data.antwoord        || '';
   var pad      = data.opgeslagen_pad  || '';
 
-  // Werf-badge
   var badge = document.getElementById('werfBadge');
   badge.innerHTML = '📁 ' + escHtml(werf)
     + (isNieuw ? ' <span class="nieuw-badge">NIEUW</span>' : '');
 
-  // Opgeslagen pad
   if (pad) {
     document.getElementById('opslaanPadTekst').textContent = pad;
     toonEl('opslaanPad', true);
@@ -129,9 +124,7 @@ function toonResultaat(data) {
     toonEl('opslaanPad', false);
   }
 
-  // Antwoord in textarea
   document.getElementById('antwoordArea').value = antwoord;
-
   toonEl('resultaatBlok', true);
 }
 
@@ -143,19 +136,16 @@ function voegIn() {
 
   var item = Office.context.mailbox.item;
 
-  // Probeer eerst displayReplyFormAsync (Mailbox 1.9+)
   if (item.displayReplyFormAsync) {
     item.displayReplyFormAsync(
       { htmlBody: '<p>' + tekst.replace(/\n/g, '<br>') + '</p>' },
       function(result) {
         if (result.status !== Office.AsyncResultStatus.Succeeded) {
-          // Fallback naar synchrone versie
           item.displayReplyForm({ htmlBody: '<p>' + tekst.replace(/\n/g, '<br>') + '</p>' });
         }
       }
     );
   } else {
-    // Mailbox 1.1 fallback
     item.displayReplyForm({ htmlBody: '<p>' + tekst.replace(/\n/g, '<br>') + '</p>' });
   }
 }
@@ -172,7 +162,6 @@ function kopieer() {
       setTimeout(function() { knop.textContent = orig; }, 1500);
     });
   } else {
-    // Fallback voor oudere WebView
     var ta = document.getElementById('antwoordArea');
     ta.select();
     document.execCommand('copy');
